@@ -9,7 +9,7 @@ Ceza infaz süresi için **simülasyon** amaçlı web aracı. Girilen ceza ve ba
 
 üretir.
 
-> Bu proje **resmî hesaplama aracı değildir**. Sonuçlar bilgilendirme amaçlıdır.
+> Bu proje **resmî hesaplama aracı değildir**. Sonuçlar yalnızca bilgilendirme amaçlıdır.
 
 ---
 
@@ -28,10 +28,10 @@ Ceza infaz süresi için **simülasyon** amaçlı web aracı. Girilen ceza ve ba
 
 ## Kurulum ve Çalıştırma
 
-Bu proje saf HTML/CSS/JS çalışır.
+Bu proje saf HTML/CSS/JS ile çalışır.
 
-### Yöntem 1: Dosyayı aç
-- `index.html` dosyasını indirip tarayıcıda açın.
+### Yöntem 1: Dosyayı doğrudan aç
+- `index.html` dosyasını tarayıcıda açın.
 
 ### Yöntem 2: Basit yerel sunucu (önerilir)
 Bazı tarayıcılar yerel dosyada tarih/JS davranışlarını farklı ele alabilir. Yerel sunucu daha stabil olur.
@@ -39,3 +39,17 @@ Bazı tarayıcılar yerel dosyada tarih/JS davranışlarını farklı ele alabil
 Python ile:
 ```bash
 python -m http.server 8000
+```
+
+Ardından tarayıcıda:
+
+```text
+http://localhost:8000
+```
+
+---
+
+## Notlar
+
+- Hesaplama çıktıları hukuki danışmanlık yerine geçmez.
+- Uygulama, kanun değişiklikleri karşısında güncel kalacak şekilde düzenli gözden geçirilmelidir.
