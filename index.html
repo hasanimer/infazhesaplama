@@ -7,7 +7,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    :root {
+      --app-tint: #c6d4d6;
+      --app-accent: #55777b;
+      --app-accent-dark: #3f6367;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--app-tint);
+    }
     [x-cloak] { display: none!important; }
 
     .step-button {
@@ -22,8 +31,8 @@
       color: #6b7280;
     }
     .step-button[aria-selected="true"] {
-      color: #2563eb;
-      border-color: #2563eb;
+      color: var(--app-accent);
+      border-color: var(--app-accent);
     }
     .step-button .step-circle {
       width: 2rem;
@@ -39,13 +48,13 @@
       transition: all 0.2s ease-in-out;
     }
     .step-button[aria-selected="true"] .step-circle {
-      background-color: #2563eb;
+      background-color: var(--app-accent);
       color: white;
     }
 
     .tab-button[aria-selected="true"] {
       background-color: white;
-      color: #2563eb;
+      color: var(--app-accent);
       box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
     }
     .tab-button[aria-selected="false"] {
@@ -101,6 +110,26 @@
       font-size: 0.75rem;
       color: #6b7280;
     }
+
+
+    .primary-btn {
+      background: linear-gradient(to right, var(--app-accent), var(--app-accent-dark));
+      color: #fff;
+    }
+
+    .primary-btn:hover {
+      background: linear-gradient(to right, var(--app-accent-dark), #35575b);
+    }
+
+    .focus\:ring-blue-500:focus,
+    .focus\:ring-blue-300:focus,
+    .focus\:ring-blue-500:focus-visible,
+    .focus\:ring-blue-300:focus-visible {
+      --tw-ring-color: rgba(85, 119, 123, 0.45) !important;
+      border-color: var(--app-accent) !important;
+    }
+
+    .text-gray-800 { color: var(--app-accent-dark) !important; }
   </style>
 </head>
 
@@ -158,7 +187,7 @@
               </div>
             </div>
             <div class="pt-6 text-right">
-              <button type="button" id="btn-next-1" class="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
+              <button type="button" id="btn-next-1" class="primary-btn rounded-lg px-4 py-3 font-semibold shadow focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
             </div>
           </div>
 
@@ -187,7 +216,7 @@
             <div class="pt-6 flex justify-between">
               <!-- ✅ KRİTİK HTML HATASI DÜZELTİLDİ -->
               <button type="button" id="btn-back-2" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Geri</button>
-              <button type="button" id="btn-next-2" class="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
+              <button type="button" id="btn-next-2" class="primary-btn rounded-lg px-4 py-3 font-semibold shadow focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
             </div>
           </div>
 
@@ -229,9 +258,9 @@
               </div>
 
               <div>
-                <label for="deducation" class="block text-sm font-semibold mb-1">Mahsup (gün)</label>
-                <input id="deducation" type="number" min="0" value="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-                <p id="error-deducation" class="error-msg hidden"></p>
+                <label for="deduction" class="block text-sm font-semibold mb-1">Mahsup (gün)</label>
+                <input id="deduction" type="number" min="0" value="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <p id="error-deduction" class="error-msg hidden"></p>
               </div>
 
               <div>
@@ -253,7 +282,7 @@
               <button type="button" id="btn-back-3" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Geri</button>
               <div>
                 <button type="reset" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Temizle</button>
-                <button type="submit" class="ml-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">Hesapla</button>
+                <button type="submit" class="primary-btn ml-2 rounded-lg px-4 py-3 font-semibold shadow focus:outline-none focus:ring-4 focus:ring-blue-300">Hesapla</button>
               </div>
             </div>
           </div>
@@ -274,10 +303,10 @@
             <div id="r-ks-date" class="mt-1 text-2xl font-bold text-green-700">-</div>
             <div id="r-ks-sure" class="text-sm text-green-800"></div>
           </article>
-          <article class="rounded-2xl bg-blue-50 p-5 shadow-sm ring-1 ring-blue-200">
-            <div class="text-xs font-medium uppercase tracking-wide text-blue-800">Denetimli Serbestlik</div>
+          <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-800">Denetimli Serbestlik</div>
             <div id="r-ds-date" class="mt-1 text-2xl font-bold text-blue-700">-</div>
-            <div id="r-ds-note" class="text-sm text-blue-800"></div>
+            <div id="r-ds-note" class="text-sm text-gray-800"></div>
           </article>
           <article class="rounded-2xl bg-rose-50 p-5 shadow-sm ring-1 ring-rose-200">
             <div class="text-xs font-medium uppercase tracking-wide text-rose-800">Hak Ederek Tahliye</div>
@@ -489,13 +518,13 @@
           toplamCezaGun = D.toDays(input.sentence);
         }
 
-        const infazEdilecekGun = (toplamCezaGun === Infinity ? Infinity : Math.max(0, toplamCezaGun - (input.deducationDays || 0)));
+        const infazEdilecekGun = (toplamCezaGun === Infinity ? Infinity : Math.max(0, toplamCezaGun - (input.deductionDays || 0)));
 
         let kurumdaGecirilecekGun;
         if (ksYok) {
           kurumdaGecirilecekGun = infazEdilecekGun;
         } else if (ksSureGun > 0) {
-          kurumdaGecirilecekGun = Math.max(0, ksSureGun - (input.deducationDays || 0));
+          kurumdaGecirilecekGun = Math.max(0, ksSureGun - (input.deductionDays || 0));
         } else {
           kurumdaGecirilecekGun = Math.ceil(infazEdilecekGun * oran);
         }
@@ -726,6 +755,7 @@
         const years = +(el('years').value||0);
         const months = +(el('months').value||0);
         const days = +(el('days').value||0);
+        const deductionDays = +(el('deduction').value||0);
 
         if (!isLife && years === 0 && months === 0 && days === 0) {
           const msg = el('error-years');
@@ -737,6 +767,14 @@
           el('error-years').classList.add('hidden');
         }
 
+        if (!Number.isFinite(deductionDays) || deductionDays < 0) {
+          const msg = el('error-deduction');
+          msg.textContent = "Mahsup değeri 0 veya daha büyük bir sayı olmalıdır.";
+          msg.classList.remove('hidden');
+          showStep(3);
+          return;
+        }
+
         const crimeDate = el('crimeDate').value ? D.parseDateLocal(el('crimeDate').value) : null;
         const startDate = el('startDate').value ? D.parseDateLocal(el('startDate').value) : null;
 
@@ -746,7 +784,7 @@
           startDate,
           ageGroup: el('ageGroup').value,
           crimeType: el('crimeType').value,
-          deducationDays: +(el('deducation').value||0),
+          deductionDays,
           recidivism: el('recidivism').value,
           isOrganized: el('isOrganized').checked,
           specialStatus: el('special').value,
@@ -842,7 +880,8 @@
           timelineContainer.classList.add('hidden');
         }
 
-        const isLife = el('crimeType').value.includes('muebbet');
+        const selectedCrimeType = el('crimeType').value;
+        const isLife = selectedCrimeType === 'muebbet' || selectedCrimeType === 'agirMuebbet';
         const lifeTabButton = el('tab-btn-life');
         lifeTabButton.classList.toggle('hidden', !isLife);
         if (!isLife && lifeTabButton.getAttribute('aria-selected') === 'true') {
