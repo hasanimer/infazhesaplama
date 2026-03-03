@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ceza İnfaz Süresi Hesaplama Robotu (Zaman Çizelgeli)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak] { display: none!important; }
+
+    .step-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-bottom-width: 4px;
+      border-color: transparent;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .step-button[aria-selected="true"] {
+      color: #2563eb;
+      border-color: #2563eb;
+    }
+    .step-button .step-circle {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      background-color: #e5e7eb;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease-in-out;
+    }
+    .step-button[aria-selected="true"] .step-circle {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background-color: white;
+      color: #2563eb;
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    }
+    .tab-button[aria-selected="false"] {
+      background-color: #f3f4f6;
+      color: #6b7280;
+    }
+    .tab-panel { display: none; }
+    .tab-panel[aria-hidden="false"] { display: block; }
+    .error-msg {
+      color: #dc2626;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .timeline-container {
+      position: relative;
+      width: 100%;
+      height: 60px;
+      padding-top: 20px;
+      margin-top: 1rem;
+    }
+    .timeline-bar {
+      width: 100%;
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 9999px;
+      position: relative;
+    }
+    .timeline-point {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px;
+    }
+    .timeline-point-label {
+      position: absolute;
+      top: -20px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    .timeline-date-label {
+      position: absolute;
+      top: 25px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+  <main class="mx-auto max-w-5xl p-4 md:p-8 w-full">
+    <header class="mb-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 text-center">
+      <h1 class="text-3xl md:text-4xl font-bold">İnfaz Hesaplama Robotu</h1>
+    </header>
+
+    <section class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <form id="form" class="lg:col-span-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200" aria-describedby="uyari" novalidate>
+
+        <nav class="border-b border-gray-200 mb-6">
+          <div class="flex justify-between" role="tablist">
+            <button type="button" id="step-btn-1" role="tab" aria-selected="true" class="step-button flex-1" aria-controls="form-step-1">
+              <span class="step-circle">1</span>
+              Temel Bilgiler
+            </button>
+            <button type="button" id="step-btn-2" role="tab" aria-selected="false" class="step-button flex-1" aria-controls="form-step-2">
+              <span class="step-circle">2</span>
+              Detaylar
+            </button>
+            <button type="button" id="step-btn-3" role="tab" aria-selected="false" class="step-button flex-1" aria-controls="form-step-3">
+              <span class="step-circle">3</span>
+              Nitelik
+            </button>
+          </div>
+        </nav>
+
+        <div class="space-y-6">
+          <div id="form-step-1" data-step="1" role="tabpanel" aria-labelledby="step-btn-1" aria-hidden="false">
+            <h2 class="text-lg font-semibold mb-3">1. Temel Bilgiler</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="years">Toplam Hapis Cezası</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <input id="years" type="number" min="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Yıl" />
+                  <input id="months" type="number" min="0" max="11" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ay" />
+                  <input id="days" type="number" min="0" max="365" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Gün" />
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Müebbet seçeneklerinde bu alan otomatik sayılır.</p>
+                <p id="error-years" class="error-msg hidden"></p>
+              </div>
+
+              <div>
+                <label for="crimeDate" class="block text-sm font-semibold mb-1">Suç Tarihi <span class="text-red-600">*</span></label>
+                <input id="crimeDate" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" required />
+                <p id="error-crimeDate" class="error-msg hidden">Lütfen suç tarihini giriniz.</p>
+              </div>
+
+              <div>
+                <label for="startDate" class="block text-sm font-semibold mb-1">İnfaz Başlangıç Tarihi <span class="text-red-600">*</span></label>
+                <input id="startDate" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" required />
+                <p id="error-startDate" class="error-msg hidden">Lütfen infaz başlangıç tarihini giriniz.</p>
+              </div>
+            </div>
+            <div class="pt-6 text-right">
+              <button type="button" id="btn-next-1" class="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
+            </div>
+          </div>
+
+          <div id="form-step-2" data-step="2" role="tabpanel" aria-labelledby="step-btn-2" aria-hidden="true" class="hidden">
+            <h2 class="text-lg font-semibold mb-3">2. Hükümlüye İlişkin Detaylar</h2>
+            <div class="space-y-4">
+              <div>
+                <label for="ageGroup" class="block text-sm font-semibold mb-1">Suç Tarihindeki Yaş Grubu <span class="text-red-600">*</span></label>
+                <select id="ageGroup" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                  <option value="adult">18+ (Yetişkin)</option>
+                  <option value="child_15_18">15-18 Yaş Arası (Çocuk)</option>
+                  <option value="child_0_15">15 Yaş Altı (Çocuk)</option>
+                </select>
+              </div>
+              <div>
+                <label for="special" class="block text-sm font-semibold mb-1">Özel Durum</label>
+                <select id="special" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                  <option value="yok">Yok</option>
+                  <option value="anne">6 Yaş Altı Çocuğu Olan Anne (105/A-3-c)</option>
+                  <option value="yasli">70+ Yaş (105/A-3-a)</option>
+                  <option value="hamile">Hamile / Yeni Doğum (Bilgilendirme)</option>
+                  <option value="hasta">Ağır Hasta (Bilgilendirme)</option>
+                </select>
+              </div>
+            </div>
+            <div class="pt-6 flex justify-between">
+              <!-- ✅ KRİTİK HTML HATASI DÜZELTİLDİ -->
+              <button type="button" id="btn-back-2" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Geri</button>
+              <button type="button" id="btn-next-2" class="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">İleri</button>
+            </div>
+          </div>
+
+          <div id="form-step-3" data-step="3" role="tabpanel" aria-labelledby="step-btn-3" aria-hidden="true" class="hidden">
+            <h2 class="text-lg font-semibold mb-3">3. Suçun Niteliği ve Diğer Detaylar</h2>
+            <div class="space-y-4">
+              <div>
+                <label for="crimeType" class="block text-sm font-semibold mb-1">Suç Türü</label>
+                <select id="crimeType" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                  <optgroup label="Müebbet Cezaları">
+                    <option value="agirMuebbet">Ağırlaştırılmış Müebbet</option>
+                    <option value="muebbet">Müebbet</option>
+                  </optgroup>
+                  <optgroup label="Süreli Hapis (İnfaz 3/4)">
+                    <option value="uyusturucu">Uyuşturucu/Uyarıcı Madde Ticareti (TCK 188)</option>
+                    <option value="cinsel">Nitelikli Cinsel Suçlar (TCK 102/2, 103, 104/2-3)</option>
+                  </optgroup>
+                  <optgroup label="Süreli Hapis (İnfaz 2/3)">
+                    <option value="kastenOldurme">Kasten Öldürme (TCK 81, 82)</option>
+                    <!-- ✅ YENİ: 7571/Geçici 10/6 uyarısı için pratik seçenek -->
+                    <option value="depremOldurme">Deprem Nedeniyle Bina/Yapı Yıkılması Sonucu Öldürme (Uyarı Amaçlı)</option>
+                    <option value="teror">Terör Suçları (TMK Kapsamı)</option>
+                    <option value="iskence">İşkence (TCK 94, 95)</option>
+                    <option value="eziyet">Eziyet (TCK 96)</option>
+                  </optgroup>
+                  <optgroup label="Süreli Hapis (İnfaz 1/2)">
+                    <option value="adi" selected>Genel Adi Suçlar (Hırsızlık, Dolandırıcılık vb.)</option>
+                    <option value="yaralama">Kasten Yaralama (TCK 86/1-2)</option>
+                    <option value="cinsel_taciz">Cinsel Taciz (TCK 105)</option>
+                    <option value="tehdit">Tehdit, Şantaj, Hakaret</option>
+                  </optgroup>
+                </select>
+
+                <!-- ✅ İsteğe bağlı: 82/1 (d)(e)(f) yakalama (sadece uyarı) -->
+                <div class="mt-2 flex items-center gap-2">
+                  <input id="is82def" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <label for="is82def" class="text-xs font-semibold text-gray-700">Kasten öldürme TCK 82/1 (d)-(e)-(f) kapsamında mı? (Uyarı)</label>
+                </div>
+              </div>
+
+              <div>
+                <label for="deducation" class="block text-sm font-semibold mb-1">Mahsup (gün)</label>
+                <input id="deducation" type="number" min="0" value="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <p id="error-deducation" class="error-msg hidden"></p>
+              </div>
+
+              <div>
+                <label for="recidivism" class="block text-sm font-semibold mb-1">Tekerrür</label>
+                <select id="recidivism" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                  <option value="yok">Yok</option>
+                  <option value="birinci">1. Kez (2/3)</option>
+                  <option value="ikinci">2. Kez (Tam İnfaz)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input id="isOrganized" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                <label for="isOrganized" class="text-sm font-semibold">Örgütlü / Terör Suçu</label>
+              </div>
+            </div>
+
+            <div class="pt-6 flex justify-between">
+              <button type="button" id="btn-back-3" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Geri</button>
+              <div>
+                <button type="reset" class="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-200">Temizle</button>
+                <button type="submit" class="ml-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-semibold text-white shadow hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300">Hesapla</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p id="uyari" class="sr-only">Zorunlu alanlar işaretlendi. Hata durumunda uyarılar burada görüntülenir.</p>
+        <div id="error" class="hidden rounded-lg border-l-4 border-red-500 bg-red-50 p-4 text-red-800" role="alert" aria-live="assertive"></div>
+      </form>
+
+      <section id="results" class="lg:col-span-3 hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-500">Toplam Ceza</div>
+            <div id="r-total" class="mt-1 text-2xl font-bold">-</div>
+          </article>
+          <article class="rounded-2xl bg-green-50 p-5 shadow-sm ring-1 ring-green-200">
+            <div class="text-xs font-medium uppercase tracking-wide text-green-800">Koşullu Salıverilme</div>
+            <div id="r-ks-date" class="mt-1 text-2xl font-bold text-green-700">-</div>
+            <div id="r-ks-sure" class="text-sm text-green-800"></div>
+          </article>
+          <article class="rounded-2xl bg-blue-50 p-5 shadow-sm ring-1 ring-blue-200">
+            <div class="text-xs font-medium uppercase tracking-wide text-blue-800">Denetimli Serbestlik</div>
+            <div id="r-ds-date" class="mt-1 text-2xl font-bold text-blue-700">-</div>
+            <div id="r-ds-note" class="text-sm text-blue-800"></div>
+          </article>
+          <article class="rounded-2xl bg-rose-50 p-5 shadow-sm ring-1 ring-rose-200">
+            <div class="text-xs font-medium uppercase tracking-wide text-rose-800">Hak Ederek Tahliye</div>
+            <div id="r-hak-date" class="mt-1 text-2xl font-bold text-rose-700">-</div>
+            <div id="r-hak-sure" class="text-sm text-rose-800"></div>
+          </article>
+        </div>
+
+        <div id="r-timeline-container" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 hidden">
+          <h3 class="text-base font-semibold mb-6 text-gray-800">İnfaz Zaman Çizelgesi</h3>
+          <div id="r-timeline" class="timeline-container"></div>
+        </div>
+
+        <div class="w-full">
+          <div class="border-b border-gray-200">
+            <div class="overflow-x-auto">
+              <nav class="-mb-px flex gap-4" role="tablist">
+                <button id="tab-btn-notes" role="tab" aria-selected="true" aria-controls="tab-panel-notes" class="tab-button whitespace-nowrap py-3 px-4 rounded-t-lg text-sm font-semibold border-b-2 border-transparent">Hesaplama Notları</button>
+                <button id="tab-btn-warnings" role="tab" aria-selected="false" aria-controls="tab-panel-warnings" class="tab-button whitespace-nowrap py-3 px-4 rounded-t-lg text-sm font-semibold border-b-2 border-transparent">Hukuki Uyarılar</button>
+                <button id="tab-btn-life" role="tab" aria-selected="false" aria-controls="tab-panel-life" class="tab-button hidden whitespace-nowrap py-3 px-4 rounded-t-lg text-sm font-semibold border-b-2 border-transparent">Müebbet Uyarısı</button>
+              </nav>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div id="tab-panel-notes" role="tabpanel" aria-hidden="false" class="tab-panel rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
+              <h3 class="mb-2 font-bold">Hesaplama Notları</h3>
+              <ul id="notes" class="list-disc list-inside space-y-1 text-sm text-gray-700"></ul>
+            </div>
+
+            <div id="tab-panel-warnings" role="tabpanel" aria-hidden="true" class="tab-panel rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 space-y-4">
+              <div>
+                <h3 class="font-bold text-yellow-700">Yasal Uyarı (Simülasyon)</h3>
+                <p class="mt-1 text-sm text-gray-700">
+                  Bu araç bir <strong>simülasyondur</strong>. COVID izni, geçici 10 uygulamaları, kurum içi iyi hâl, mükerrerliğe esas suçlar, cezaların toplanması ve uyarlama gibi özel durumlar kapsam dışıdır.
+                  Resmî değerlendirme için İnfaz Hâkimliği / Cumhuriyet başsavcılığına başvurunuz.
+                </p>
+                <p class="mt-2 text-xs text-gray-600">
+                  Not: 24/12/2025 tarihli 7571 sayılı Kanun ile 5275 sayılı Kanun geçici 10. maddenin 6. fıkrasında yapılan değişiklikler, bu araçta yalnızca <strong>bilgilendirme uyarısı</strong> olarak ele alınmıştır.
+                </p>
+              </div>
+              <hr class="border-gray-200">
+              <div>
+                <h3 class="font-bold text-blue-700">İnfaz Usul Hukuku Notu (CGTİHK md. 101)</h3>
+                <p class="mt-1 text-sm text-gray-700">
+                  Hükmün infazı sırasında (örn: denetimli serbestlik veya erteleme ihlali, uyarlama yargılaması, cezaların toplanması) verilen "ek kararlar", Yargıtay içtihatlarına göre temyize değil, 5275 sayılı Kanun md. 101/3 uyarınca <strong>itiraza</strong> tabidir.
+                </p>
+              </div>
+            </div>
+
+            <div id="tab-panel-life" role="tabpanel" aria-hidden="true" class="tab-panel">
+              <div id="life-warning" class="rounded-lg border-l-4 border-orange-500 bg-orange-50 p-4 text-orange-900">
+                <h3 class="font-bold">MÜEBBET UYARISI</h3>
+                <p class="text-sm">Müebbet: KS 24 yıl (örgütlü 30) → DS 1 yıl. Ağırlaştırılmış Müebbet: KS 30 yıl (örgütlü 36) → DS yok.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      const D = {
+        addDays: (d, n) => {
+          const r = new Date(d);
+          r.setUTCDate(r.getUTCDate() + Math.round(n));
+          return r;
+        },
+        fmt: d => (!d || isNaN(d.getTime()))
+          ? 'N/A'
+          : d.toLocaleDateString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric', timeZone: 'UTC' }),
+        toDays: o => {
+          const years = o.years || 0, months = o.months || 0, days = o.days || 0;
+          return years * 365 + months * 30 + days;
+        },
+        humanDays: n => {
+          if (n === Infinity) return 'Ömür Boyu';
+          if (n <= 0) return '0 Gün';
+          const y = Math.floor(n / 365);
+          const r = n % 365;
+          const mo = Math.floor(r / 30);
+          const d = Math.round(r % 30);
+          return [y && y + " Yıl", mo && mo + " Ay", d && d + " Gün"].filter(Boolean).join(', ');
+        },
+        // ✅ Daha güvenli parser
+        parseDateLocal: (str) => {
+          if (!str || typeof str !== 'string') return null;
+          const parts = str.split('-');
+          if (parts.length !== 3) return null;
+          const y = Number(parts[0]), m = Number(parts[1]), d = Number(parts[2]);
+          if (!y || !m || !d) return null;
+          return new Date(Date.UTC(y, m - 1, d));
+        }
+      };
+
+      // ✅ 5275 Geçici 10/6 (31/07/2023 ve öncesi) bilgilendirme uyarısı için cut-off
+      const GECICI10_CUTOFF = new Date(Date.UTC(2023, 6, 31)); // 31 Temmuz 2023 UTC
+
+      function computeInfaz(input) {
+        const errors = [];
+        const life = (input.crimeType === 'muebbet' || input.crimeType === 'agirMuebbet');
+
+        if (!input.startDate) errors.push('İnfaz başlangıç tarihi zorunludur.');
+        if (!input.crimeDate) errors.push('Suç tarihi zorunludur.');
+
+        const zeroSentence = !input.sentence || (input.sentence.years === 0 && input.sentence.months === 0 && input.sentence.days === 0);
+        // ✅ UI bağımlılığı kaldırıldı
+        if (!life && zeroSentence) {
+          errors.push("Süreli hapis cezası için Yıl, Ay veya Gün alanlarından en az biri doldurulmalıdır.");
+        }
+        if (errors.length) return { success:false, errors };
+
+        const notes = [];
+
+        // ✅ 7571 sayılı Kanun / 5275 Geçici 10/6 bilgilendirme uyarıları
+        // (Hesaplamayı değiştirmez, sadece not düşer.)
+        const isBeforeOrOnCutoff = (input.crimeDate && input.crimeDate.getTime() <= GECICI10_CUTOFF.getTime());
+        if (isBeforeOrOnCutoff) {
+          const gecici10_6_relevant =
+            input.crimeType === 'cinsel' ||
+            input.crimeType === 'depremOldurme' ||
+            (input.crimeType === 'kastenOldurme' && input.is82def === true);
+
+          const kastenOldurmeGeneralButUnknown = (input.crimeType === 'kastenOldurme' && input.is82def !== true);
+
+          if (gecici10_6_relevant) {
+            notes.push("Bilgilendirme: Suç tarihi 31/07/2023 ve öncesi. 7571 sayılı Kanun ile 5275 sayılı Kanun geçici 10/6 kapsamındaki istisnalar genişletilmiştir. Bu araç geçici 10 uygulamalarını hesaplamaz; somut dosyada ayrıca değerlendirme gerekir.");
+          } else if (kastenOldurmeGeneralButUnknown) {
+            notes.push("Bilgilendirme: Suç tarihi 31/07/2023 ve öncesi. Kasten öldürme bakımından TCK 82/1 (d)-(e)-(f) bentleri yönünden 5275 geçici 10/6 istisnası gündeme gelebilir. Bu araç geçici 10 uygulamalarını hesaplamaz.");
+          }
+        }
+
+        let dsGun = 1095;
+        let dsAciklama = '(3 Yıl - CGTİHK 105/A)';
+        let ksYok = false;
+
+        const isChild = (input.ageGroup === 'child_15_18' || input.ageGroup === 'child_0_15');
+        const ageAtCrimeForLogic = (input.ageGroup === 'child_0_15') ? 14 : 17;
+        let oran = 0.5;
+        let ksSureGun = 0;
+
+        const dsİstisnalar  = ['kastenOldurme','teror','cinsel','uyusturucu','depremOldurme'];
+        const oran2Bolu3    = ['kastenOldurme','depremOldurme','teror','iskence','eziyet'];
+        const oran3Bolu4    = ['cinsel','uyusturucu'];
+
+        if (dsİstisnalar.includes(input.crimeType) || input.isOrganized) {
+          dsGun = 365;
+          dsAciklama = '(1 Yıl - 105/A İstisna)';
+        }
+
+        if (input.crimeType === 'agirMuebbet') {
+          dsGun = 0;
+          dsAciklama = '(DS Yok - 105/A-2)';
+          if (isChild) {
+            ksSureGun = (ageAtCrimeForLogic < 15 ? 15 : 18) * 365;
+            notes.push('Çocuk (107/5) uygulanmıştır.');
+          } else {
+            ksSureGun = (input.isOrganized ? 36 : 30) * 365;
+          }
+          if (input.recidivism === 'ikinci' && !isChild) {
+            ksYok = true;
+            ksSureGun = 0;
+            notes.push('2. tekerrürde KS yok (108/1-d).');
+          }
+        } else if (input.crimeType === 'muebbet') {
+          dsGun = 365;
+          dsAciklama = '(1 Yıl - CGTİHK 105/A)';
+          if (isChild) {
+            ksSureGun = (ageAtCrimeForLogic < 15 ? 12 : 15) * 365;
+            notes.push('Çocuk (107/5) uygulanmıştır.');
+          } else {
+            ksSureGun = (input.isOrganized ? 30 : 24) * 365;
+          }
+        } else {
+          if (input.recidivism === 'birinci') {
+            oran = 2/3;
+            notes.push('1. Tekerrür: İnfaz oranı 2/3 (108/1-a).');
+          } else if (input.recidivism === 'ikinci') {
+            oran = 1;
+            ksYok = true;
+            dsAciklama = '(Tam infaz + 1 Yıl DS - 108/3)';
+            notes.push('2. Tekerrür: KS yok, tam infaz (108/1-d).');
+          }
+
+          if (!ksYok) {
+            if (isChild) {
+              oran = 2/3;
+              notes.push('Suç tarihinde 18 yaşından küçük → oran 2/3 (107/5).');
+            } else if (oran3Bolu4.includes(input.crimeType)) {
+              oran = 3/4;
+              notes.push('Suç niteliği (TCK 188, 102/2 vb.) → oran 3/4 (107/2-c,d).');
+            } else if (oran2Bolu3.includes(input.crimeType)) {
+              oran = 2/3;
+              notes.push('Suç niteliği (TCK 81-82, TMK vb.) → oran 2/3 (107/2-b).');
+            } else {
+              oran = (input.recidivism === 'birinci') ? 2/3 : 1/2;
+              if (oran === 1/2) notes.push('Genel adi suç → oran 1/2 (107/2).');
+            }
+          }
+        }
+
+        let toplamCezaGun;
+        if (life) {
+          toplamCezaGun = Infinity;
+        } else {
+          toplamCezaGun = D.toDays(input.sentence);
+        }
+
+        const infazEdilecekGun = (toplamCezaGun === Infinity ? Infinity : Math.max(0, toplamCezaGun - (input.deducationDays || 0)));
+
+        let kurumdaGecirilecekGun;
+        if (ksYok) {
+          kurumdaGecirilecekGun = infazEdilecekGun;
+        } else if (ksSureGun > 0) {
+          kurumdaGecirilecekGun = Math.max(0, ksSureGun - (input.deducationDays || 0));
+        } else {
+          kurumdaGecirilecekGun = Math.ceil(infazEdilecekGun * oran);
+        }
+
+        const isYasli = input.specialStatus === 'yasli';
+        const isAnne  = input.specialStatus === 'anne';
+        const is105A6İstisna = ['teror','cinsel','uyusturucu','depremOldurme'].includes(input.crimeType) || input.isOrganized;
+
+        if ((isYasli || isAnne) && !life && !isChild && !is105A6İstisna) {
+          const DSYasliSuresi = 5 * 365;
+          const DSAnneSuresi  = 3 * 365;
+          const YeniDSGun     = 4 * 365;
+          let appliedSpecialDS = false;
+
+          if (isYasli && kurumdaGecirilecekGun <= DSYasliSuresi) {
+            dsGun = YeniDSGun;
+            dsAciklama = `(4 Yıl DS - 70+ / 105/A-3-a)`;
+            notes.push('70+ ve KS süresi ≤ 5 yıl → 4 yıl DS (105/A-3-a).');
+            appliedSpecialDS = true;
+          } else if (isAnne && kurumdaGecirilecekGun <= DSAnneSuresi) {
+            dsGun = YeniDSGun;
+            dsAciklama = `(4 Yıl DS - Anne / 105/A-3-c)`;
+            notes.push('6 yaş altı çocuk ve KS süresi ≤ 3 yıl → 4 yıl DS (105/A-3-c).');
+            appliedSpecialDS = true;
+          }
+
+          if (!appliedSpecialDS && dsGun === 1095) {
+            notes.push(isYasli
+              ? '70+ Yaş: KS süresi 5 yıldan fazla, standart DS uygulanır.'
+              : 'Anne: KS süresi 3 yıldan fazla, standart DS uygulanır.');
+          } else if (dsGun === 365) {
+            notes.push(isYasli
+              ? '70+ Yaş: Standart 1 Yıl DS istisnası (105/A-6) uygulandı.'
+              : 'Anne: Standart 1 Yıl DS istisnası (105/A-6) uygulandı.');
+          }
+        } else if ((isYasli || isAnne) && (is105A6İstisna || life || isChild)) {
+          if (is105A6İstisna) notes.push('Özel Durum (Anne/70+): Suç tipi (Terör, Cinsel, Uyuşturucu, Örgütlü) nedeniyle 4 Yıllık DS (105/A-3) uygulanamaz (105/A-6).');
+          if (life) notes.push('Özel Durum (Anne/70+): Müebbet cezalarda 4 yıllık DS (105/A-3) uygulanmaz.');
+          if (isChild) notes.push('Özel Durum (Anne/70+): Çocuk hükümlülerde 4 yıllık DS (105/A-3) uygulanmaz.');
+        }
+
+        let dsAyrilmaGun = Math.max(0, kurumdaGecirilecekGun - dsGun);
+
+        if (dsGun > 0 && kurumdaGecirilecekGun > 0 && !life && !ksYok) {
+          const minKurum = Math.max(5, Math.ceil(kurumdaGecirilecekGun / 10));
+          if (dsAyrilmaGun < minKurum) {
+            dsAyrilmaGun = minKurum;
+            dsAciklama += ` (Min. ${D.humanDays(minKurum)} kurumda - 105/A-5)`;
+            notes.push(`1/10 kuralı (105/A-5): Kurumda en az ${D.humanDays(minKurum)} kalınmalıdır.`);
+          }
+        }
+
+        if (input.recidivism === 'ikinci' && !isChild && !life) {
+          dsGun = 365;
+          dsAciklama = '(1 Yıl DS - 2. Tekerrür 108/3)';
+          notes.push('2. Tekerrür (108/3): Tam infaz uygulanır, KS yoktur. İnfazın son 1 yılı DS olarak çektirilir.');
+          dsAyrilmaGun = Math.max(0, kurumdaGecirilecekGun - dsGun);
+        }
+
+        const hakederekTahliyeTarihi = (infazEdilecekGun === Infinity ? null : D.addDays(input.startDate, infazEdilecekGun));
+        const kosulluSaliverilmeTarihi = (kurumdaGecirilecekGun === Infinity || ksYok ? null : D.addDays(input.startDate, kurumdaGecirilecekGun));
+
+        let denetimliSerbestlikTarihi = (dsGun === 0 || (ksYok && input.recidivism !== 'ikinci') ? null : D.addDays(input.startDate, dsAyrilmaGun));
+
+        if (denetimliSerbestlikTarihi && kosulluSaliverilmeTarihi && denetimliSerbestlikTarihi > kosulluSaliverilmeTarihi) {
+          denetimliSerbestlikTarihi = null;
+          notes.push("1/10 kuralı nedeniyle DS'ye ayrılma tarihi KS tarihini geçtiği için DS hakkı bulunmamaktadır.");
+        }
+
+        return {
+          success: true,
+          data: {
+            toplamCezaGun,
+            infazEdilecekGun,
+            kurumdaGecirilecekGun,
+            dsGun,
+            ksYok,
+            hakederekTahliyeTarihi,
+            kosulluSaliverilmeTarihi,
+            denetimliSerbestlikTarihi,
+            notes,
+            dsAciklama
+          }
+        };
+      }
+
+      const form = document.getElementById('form');
+      const errorBox = document.getElementById('error');
+      const results = document.getElementById('results');
+      const el = id => document.getElementById(id);
+
+      // Tabs (Sonuçlar)
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabPanels = document.querySelectorAll('.tab-panel');
+
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          tabButtons.forEach(btn => btn.setAttribute('aria-selected','false'));
+          button.setAttribute('aria-selected','true');
+          tabPanels.forEach(panel => panel.setAttribute('aria-hidden','true'));
+          const targetPanelId = button.getAttribute('aria-controls');
+          el(targetPanelId).setAttribute('aria-hidden','false');
+        });
+      });
+
+      function showDefaultTab(){ el('tab-btn-notes').click(); }
+
+      // Stepper
+      let currentStep = 1;
+      const steps = document.querySelectorAll('[data-step]');
+      const stepButtons = document.querySelectorAll('.step-button');
+
+      function showStep(stepNumber) {
+        steps.forEach(step => {
+          step.classList.add('hidden');
+          step.setAttribute('aria-hidden','true');
+        });
+
+        const active = el(`form-step-${stepNumber}`);
+        active.classList.remove('hidden');
+        active.setAttribute('aria-hidden','false');
+
+        stepButtons.forEach(btn => btn.setAttribute('aria-selected', 'false'));
+        el(`step-btn-${stepNumber}`).setAttribute('aria-selected', 'true');
+
+        currentStep = stepNumber;
+        errorBox.classList.add('hidden');
+      }
+
+      function validateStep1() {
+        let isValid = true;
+        const crimeDateEl = el('crimeDate');
+        const startDateEl = el('startDate');
+        const errorCrimeDate = el('error-crimeDate');
+        const errorStartDate = el('error-startDate');
+
+        if (!crimeDateEl.value) {
+          errorCrimeDate.classList.remove('hidden');
+          crimeDateEl.classList.add('border-red-500');
+          isValid = false;
+        } else {
+          errorCrimeDate.classList.add('hidden');
+          crimeDateEl.classList.remove('border-red-500');
+        }
+
+        if (!startDateEl.value) {
+          errorStartDate.classList.remove('hidden');
+          startDateEl.classList.add('border-red-500');
+          isValid = false;
+        } else {
+          errorStartDate.classList.add('hidden');
+          startDateEl.classList.remove('border-red-500');
+        }
+        return isValid;
+      }
+
+      el('btn-next-1').addEventListener('click', () => { if (validateStep1()) showStep(2); });
+      el('btn-back-2').addEventListener('click', () => showStep(1));
+      el('btn-next-2').addEventListener('click', () => showStep(3));
+      el('btn-back-3').addEventListener('click', () => showStep(2));
+
+      stepButtons.forEach((btn, index) => {
+        btn.addEventListener('click', () => {
+          const targetStep = index + 1;
+          if (targetStep < currentStep) {
+            showStep(targetStep);
+          } else if (targetStep > currentStep) {
+            if (currentStep === 1 && validateStep1()) {
+              showStep(2);
+              if (targetStep === 3) setTimeout(() => showStep(3), 0);
+            } else if (currentStep === 2) {
+              showStep(3);
+            }
+          }
+        });
+      });
+
+      function setLifePreset(){
+        const type = el('crimeType').value;
+        const isOrg = el('isOrganized').checked;
+        const isLife = type === 'muebbet' || type === 'agirMuebbet';
+
+        el('years').readOnly = isLife;
+        el('months').readOnly = isLife;
+        el('days').readOnly = isLife;
+
+        if (type === 'muebbet') {
+          el('years').value  = isOrg ? 30 : 24;
+          el('months').value = '0';
+          el('days').value   = '0';
+        } else if (type === 'agirMuebbet') {
+          el('years').value  = isOrg ? 36 : 30;
+          el('months').value = '0';
+          el('days').value   = '0';
+        } else {
+          const y = +(el('years').value || 0);
+          if ([24,30,36].includes(y) && +(el('months').value || 0) === 0 && +(el('days').value || 0) === 0) {
+            el('years').value = '';
+          }
+        }
+      }
+
+      el('crimeType').addEventListener('change', setLifePreset);
+      el('isOrganized').addEventListener('change', setLifePreset);
+
+      form.addEventListener('reset', () => {
+        errorBox.classList.add('hidden');
+        results.classList.add('hidden');
+        el('years').readOnly = false;
+        el('months').readOnly = false;
+        el('days').readOnly = false;
+        el('is82def').checked = false;
+
+        Array.from(el('ageGroup').options).forEach(opt => opt.disabled = false);
+        Array.from(el('special').options).forEach(opt => opt.disabled = false);
+
+        document.querySelectorAll('.error-msg').forEach(msg => msg.classList.add('hidden'));
+        document.querySelectorAll('input[type="date"]').forEach(inp => inp.classList.remove('border-red-500'));
+        showStep(1);
+      });
+
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        errorBox.classList.add('hidden');
+        document.querySelectorAll('.error-msg').forEach(msg => msg.classList.add('hidden'));
+
+        const isLife = el('crimeType').value === 'muebbet' || el('crimeType').value === 'agirMuebbet';
+        const years = +(el('years').value||0);
+        const months = +(el('months').value||0);
+        const days = +(el('days').value||0);
+
+        if (!isLife && years === 0 && months === 0 && days === 0) {
+          const msg = el('error-years');
+          msg.textContent = "Lütfen bir ceza süresi giriniz.";
+          msg.classList.remove('hidden');
+          showStep(1);
+          return;
+        } else {
+          el('error-years').classList.add('hidden');
+        }
+
+        const crimeDate = el('crimeDate').value ? D.parseDateLocal(el('crimeDate').value) : null;
+        const startDate = el('startDate').value ? D.parseDateLocal(el('startDate').value) : null;
+
+        const input = {
+          sentence: { years, months, days },
+          crimeDate,
+          startDate,
+          ageGroup: el('ageGroup').value,
+          crimeType: el('crimeType').value,
+          deducationDays: +(el('deducation').value||0),
+          recidivism: el('recidivism').value,
+          isOrganized: el('isOrganized').checked,
+          specialStatus: el('special').value,
+          is82def: el('is82def').checked
+        };
+
+        const out = computeInfaz(input);
+        if (!out.success) {
+          errorBox.innerHTML = 'Hesaplama yapılamadı: <ul>' + out.errors.map(err => `<li>- ${err}</li>`).join('') + '</ul>';
+          errorBox.classList.remove('hidden');
+          results.classList.add('hidden');
+          return;
+        }
+
+        render(out.data);
+        showDefaultTab();
+      });
+
+      function render(res){
+        results.classList.remove('hidden');
+        el('r-total').textContent = D.humanDays(res.toplamCezaGun);
+        el('r-hak-date').textContent = res.hakederekTahliyeTarihi ? D.fmt(res.hakederekTahliyeTarihi) : 'Ömür Boyu';
+        el('r-hak-sure').textContent = `İnfaz: ${D.humanDays(res.infazEdilecekGun)}`;
+
+        el('r-ks-date').textContent = res.ksYok ? 'YOK' : (res.kosulluSaliverilmeTarihi ? D.fmt(res.kosulluSaliverilmeTarihi) : 'N/A');
+        el('r-ks-sure').textContent = res.ksYok ? 'KS Yok (Tamamı infaz edilir)' : `Kurumda: ${D.humanDays(res.kurumdaGecirilecekGun)}`;
+
+        const dsDateText = res.denetimliSerbestlikTarihi ? D.fmt(res.denetimliSerbestlikTarihi) : 'YOK';
+        el('r-ds-date').textContent = (res.dsGun === 0) ? 'YOK' : dsDateText;
+        el('r-ds-note').textContent = res.dsAciklama;
+
+        const ul = el('notes');
+        ul.innerHTML = '';
+        (res.notes || []).forEach(n => {
+          const li = document.createElement('li');
+          li.textContent = n;
+          ul.appendChild(li);
+        });
+        if (ul.innerHTML === '') ul.innerHTML = '<li>Bu hesaplama için özel bir not bulunmamaktadır.</li>';
+
+        // Timeline
+        const timelineContainer = el('r-timeline-container');
+        const timeline = el('r-timeline');
+        timeline.innerHTML = '';
+
+        const startDateStr = el('startDate').value;
+        const startDate = D.parseDateLocal(startDateStr);
+        const totalDurationInDays = res.infazEdilecekGun;
+
+        if (res.infazEdilecekGun !== Infinity && res.hakederekTahliyeTarihi && totalDurationInDays > 0 && startDate) {
+          timelineContainer.classList.remove('hidden');
+
+          const bar = document.createElement('div');
+          bar.className = 'timeline-bar';
+
+          const points = [];
+          points.push({ percent: 0, label: 'Başlangıç', date: D.fmt(startDate), color: 'bg-gray-500' });
+
+          if(res.denetimliSerbestlikTarihi) {
+            const dsDays = (res.denetimliSerbestlikTarihi.getTime() - startDate.getTime()) / (1000*60*60*24);
+            const dsPercent = Math.max(0, Math.min(100, (dsDays / totalDurationInDays) * 100));
+            points.push({ percent: dsPercent, label: 'DS Ayrılış', date: D.fmt(res.denetimliSerbestlikTarihi), color: 'bg-blue-600' });
+          }
+
+          if(res.kosulluSaliverilmeTarihi && !res.ksYok) {
+            const ksDays = (res.kosulluSaliverilmeTarihi.getTime() - startDate.getTime()) / (1000*60*60*24);
+            const ksPercent = Math.max(0, Math.min(100, (ksDays / totalDurationInDays) * 100));
+            points.push({ percent: ksPercent, label: 'KS Tarihi', date: D.fmt(res.kosulluSaliverilmeTarihi), color: 'bg-green-600' });
+          }
+
+          points.push({ percent: 100, label: 'H.E. Tahliye', date: D.fmt(res.hakederekTahliyeTarihi), color: 'bg-rose-600' });
+
+          points.forEach(p => {
+            const point = document.createElement('div');
+            point.className = `timeline-point ${p.color}`;
+            point.style.left = `${p.percent}%`;
+
+            const topLabel = document.createElement('div');
+            topLabel.className = 'timeline-point-label';
+            topLabel.textContent = p.label;
+            point.appendChild(topLabel);
+
+            const bottomLabel = document.createElement('div');
+            bottomLabel.className = 'timeline-date-label';
+            bottomLabel.textContent = p.date;
+            point.appendChild(bottomLabel);
+
+            bar.appendChild(point);
+          });
+
+          timeline.appendChild(bar);
+        } else {
+          timelineContainer.classList.add('hidden');
+        }
+
+        const isLife = el('crimeType').value.includes('muebbet');
+        const lifeTabButton = el('tab-btn-life');
+        lifeTabButton.classList.toggle('hidden', !isLife);
+        if (!isLife && lifeTabButton.getAttribute('aria-selected') === 'true') {
+          showDefaultTab();
+        }
+
+        if (window.innerWidth < 1024) {
+          results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      // Conditional disable logic (Age/Special)
+      const ageGroupSelect = el('ageGroup');
+      const specialSelect  = el('special');
+
+      ageGroupSelect.addEventListener('change', () => {
+        const isChildSelected = ageGroupSelect.value.startsWith('child_');
+        const yasliOption = specialSelect.querySelector('option[value="yasli"]');
+        if (isChildSelected) {
+          yasliOption.disabled = true;
+          if (specialSelect.value === 'yasli') specialSelect.value = 'yok';
+        } else {
+          yasliOption.disabled = false;
+        }
+      });
+
+      specialSelect.addEventListener('change', () => {
+        const isYasliSelected = specialSelect.value === 'yasli';
+        const childOptions = ageGroupSelect.querySelectorAll('option[value^="child_"]');
+        if (isYasliSelected) {
+          childOptions.forEach(opt => opt.disabled = true);
+          if (ageGroupSelect.value.startsWith('child_')) ageGroupSelect.value = 'adult';
+        } else {
+          childOptions.forEach(opt => opt.disabled = false);
+        }
+      });
+
+      // Init
+      showDefaultTab();
+      showStep(1);
+      setLifePreset();
+    })();
+  </script>
+</body>
+</html>
