@@ -229,9 +229,9 @@
               </div>
 
               <div>
-                <label for="deducation" class="block text-sm font-semibold mb-1">Mahsup (gün)</label>
-                <input id="deducation" type="number" min="0" value="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-                <p id="error-deducation" class="error-msg hidden"></p>
+                <label for="deduction" class="block text-sm font-semibold mb-1">Mahsup (gün)</label>
+                <input id="deduction" type="number" min="0" value="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                <p id="error-deduction" class="error-msg hidden"></p>
               </div>
 
               <div>
@@ -489,13 +489,13 @@
           toplamCezaGun = D.toDays(input.sentence);
         }
 
-        const infazEdilecekGun = (toplamCezaGun === Infinity ? Infinity : Math.max(0, toplamCezaGun - (input.deducationDays || 0)));
+        const infazEdilecekGun = (toplamCezaGun === Infinity ? Infinity : Math.max(0, toplamCezaGun - (input.deductionDays || 0)));
 
         let kurumdaGecirilecekGun;
         if (ksYok) {
           kurumdaGecirilecekGun = infazEdilecekGun;
         } else if (ksSureGun > 0) {
-          kurumdaGecirilecekGun = Math.max(0, ksSureGun - (input.deducationDays || 0));
+          kurumdaGecirilecekGun = Math.max(0, ksSureGun - (input.deductionDays || 0));
         } else {
           kurumdaGecirilecekGun = Math.ceil(infazEdilecekGun * oran);
         }
@@ -726,6 +726,7 @@
         const years = +(el('years').value||0);
         const months = +(el('months').value||0);
         const days = +(el('days').value||0);
+        const deductionDays = +(el('deduction').value||0);
 
         if (!isLife && years === 0 && months === 0 && days === 0) {
           const msg = el('error-years');
@@ -737,6 +738,14 @@
           el('error-years').classList.add('hidden');
         }
 
+        if (!Number.isFinite(deductionDays) || deductionDays < 0) {
+          const msg = el('error-deduction');
+          msg.textContent = "Mahsup değeri 0 veya daha büyük bir sayı olmalıdır.";
+          msg.classList.remove('hidden');
+          showStep(3);
+          return;
+        }
+
         const crimeDate = el('crimeDate').value ? D.parseDateLocal(el('crimeDate').value) : null;
         const startDate = el('startDate').value ? D.parseDateLocal(el('startDate').value) : null;
 
@@ -746,7 +755,7 @@
           startDate,
           ageGroup: el('ageGroup').value,
           crimeType: el('crimeType').value,
-          deducationDays: +(el('deducation').value||0),
+          deductionDays,
           recidivism: el('recidivism').value,
           isOrganized: el('isOrganized').checked,
           specialStatus: el('special').value,
@@ -842,7 +851,8 @@
           timelineContainer.classList.add('hidden');
         }
 
-        const isLife = el('crimeType').value.includes('muebbet');
+        const selectedCrimeType = el('crimeType').value;
+        const isLife = selectedCrimeType === 'muebbet' || selectedCrimeType === 'agirMuebbet';
         const lifeTabButton = el('tab-btn-life');
         lifeTabButton.classList.toggle('hidden', !isLife);
         if (!isLife && lifeTabButton.getAttribute('aria-selected') === 'true') {
