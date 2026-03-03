@@ -129,7 +129,58 @@
       border-color: var(--app-accent) !important;
     }
 
-    .text-gray-800 { color: var(--app-accent-dark) !important; }
+    .note-helper {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      color: #374151;
+      font-size: 0.875rem;
+    }
+
+    .note-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .note-item {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      border-radius: 0.75rem;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.875rem;
+      color: #374151;
+      line-height: 1.4;
+    }
+
+    .note-badge {
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.1rem 0.5rem;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    .note-item[data-type="info"] .note-badge {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .note-item[data-type="warning"] .note-badge {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .note-item[data-type="rule"] .note-badge {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .theme-accent-text { color: var(--app-accent-dark); }
   </style>
 </head>
 
@@ -304,9 +355,9 @@
             <div id="r-ks-sure" class="text-sm text-green-800"></div>
           </article>
           <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-            <div class="text-xs font-medium uppercase tracking-wide text-gray-800">Denetimli Serbestlik</div>
-            <div id="r-ds-date" class="mt-1 text-2xl font-bold text-blue-700">-</div>
-            <div id="r-ds-note" class="text-sm text-gray-800"></div>
+            <div class="text-xs font-medium uppercase tracking-wide theme-accent-text">Denetimli Serbestlik</div>
+            <div id="r-ds-date" class="mt-1 text-2xl font-bold theme-accent-text">-</div>
+            <div id="r-ds-note" class="text-sm text-gray-700"></div>
           </article>
           <article class="rounded-2xl bg-rose-50 p-5 shadow-sm ring-1 ring-rose-200">
             <div class="text-xs font-medium uppercase tracking-wide text-rose-800">Hak Ederek Tahliye</div>
@@ -316,7 +367,7 @@
         </div>
 
         <div id="r-timeline-container" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 hidden">
-          <h3 class="text-base font-semibold mb-6 text-gray-800">İnfaz Zaman Çizelgesi</h3>
+          <h3 class="text-base font-semibold mb-6 theme-accent-text">İnfaz Zaman Çizelgesi</h3>
           <div id="r-timeline" class="timeline-container"></div>
         </div>
 
@@ -333,8 +384,9 @@
 
           <div class="mt-4">
             <div id="tab-panel-notes" role="tabpanel" aria-hidden="false" class="tab-panel rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-              <h3 class="mb-2 font-bold">Hesaplama Notları</h3>
-              <ul id="notes" class="list-disc list-inside space-y-1 text-sm text-gray-700"></ul>
+              <h3 class="mb-2 font-bold theme-accent-text">Hesaplama Notları</h3>
+              <p class="note-helper">Bu bölümde hesaplamada uygulanan oranlar, özel durumlar ve bilgilendirme notları sade bir dille listelenir.</p>
+              <ul id="notes" class="note-list mt-3"></ul>
             </div>
 
             <div id="tab-panel-warnings" role="tabpanel" aria-hidden="true" class="tab-panel rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 space-y-4">
@@ -350,7 +402,7 @@
               </div>
               <hr class="border-gray-200">
               <div>
-                <h3 class="font-bold text-blue-700">İnfaz Usul Hukuku Notu (CGTİHK md. 101)</h3>
+                <h3 class="font-bold theme-accent-text">İnfaz Usul Hukuku Notu (CGTİHK md. 101)</h3>
                 <p class="mt-1 text-sm text-gray-700">
                   Hükmün infazı sırasında (örn: denetimli serbestlik veya erteleme ihlali, uyarlama yargılaması, cezaların toplanması) verilen "ek kararlar", Yargıtay içtihatlarına göre temyize değil, 5275 sayılı Kanun md. 101/3 uyarınca <strong>itiraza</strong> tabidir.
                 </p>
@@ -818,12 +870,50 @@
 
         const ul = el('notes');
         ul.innerHTML = '';
-        (res.notes || []).forEach(n => {
+
+        const classifyNote = (noteText) => {
+          if (noteText.startsWith('Bilgilendirme:')) return { type: 'info', badge: 'Bilgi' };
+          if (noteText.includes('uygulanmaz') || noteText.includes('hakkı bulunmamaktadır') || noteText.includes('KS yok')) {
+            return { type: 'warning', badge: 'Dikkat' };
+          }
+          return { type: 'rule', badge: 'Uygulama' };
+        };
+
+        const notes = (res.notes || []);
+        if (!notes.length) {
           const li = document.createElement('li');
-          li.textContent = n;
+          li.className = 'note-item';
+          li.dataset.type = 'info';
+
+          const badge = document.createElement('span');
+          badge.className = 'note-badge';
+          badge.textContent = 'Bilgi';
+
+          const text = document.createElement('span');
+          text.textContent = 'Bu hesaplama için ek açıklama notu oluşmamıştır.';
+
+          li.appendChild(badge);
+          li.appendChild(text);
           ul.appendChild(li);
-        });
-        if (ul.innerHTML === '') ul.innerHTML = '<li>Bu hesaplama için özel bir not bulunmamaktadır.</li>';
+        } else {
+          notes.forEach(noteText => {
+            const li = document.createElement('li');
+            const { type, badge } = classifyNote(noteText);
+            li.className = 'note-item';
+            li.dataset.type = type;
+
+            const badgeEl = document.createElement('span');
+            badgeEl.className = 'note-badge';
+            badgeEl.textContent = badge;
+
+            const textEl = document.createElement('span');
+            textEl.textContent = noteText.replace(/^Bilgilendirme:\s*/, '');
+
+            li.appendChild(badgeEl);
+            li.appendChild(textEl);
+            ul.appendChild(li);
+          });
+        }
 
         // Timeline
         const timelineContainer = el('r-timeline-container');
